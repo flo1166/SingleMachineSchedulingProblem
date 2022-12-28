@@ -1,6 +1,7 @@
 package solver;
 
-import job.Job;
+import scheduling.Job;
+import scheduling.Schedule;
 
 /**
  * This class solves a single machine scheduling problem.
@@ -21,6 +22,10 @@ public class Solver {
 		jobs[1] = new Job("B", 3, 1, 17);
 		jobs[2] = new Job("C", 8, 5, 15);
 		jobs[3] = new Job("D", 5, 8, 13);
+		
+		Schedule[] schedule = new Schedule[1];
+		schedule[0] = new Schedule(jobs);
+		System.out.println(schedule[0].getMaxLateness());
 	}
 
 }
