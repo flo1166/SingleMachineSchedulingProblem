@@ -97,4 +97,8 @@ public class Job {
 			return r + p;
 		}
 	}
+	
+	public int getPreemption(int startDate) {
+		return r - startDate;
+	}
 }

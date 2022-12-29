@@ -18,10 +18,10 @@ public class Solver {
 	public static void main(String[] args) {
 		
 		Job[] jobs = new Job[4];
-		jobs[0] = new Job("A", 6, 0, 14);
-		jobs[1] = new Job("B", 3, 1, 17);
-		jobs[2] = new Job("C", 8, 5, 15);
-		jobs[3] = new Job("D", 5, 8, 13);
+		jobs[1] = new Job("A", 6, 0, 14);
+		jobs[0] = new Job("B", 3, 1, 17);
+		jobs[3] = new Job("C", 8, 5, 15);
+		jobs[2] = new Job("D", 5, 8, 13);
 		
 		Schedule[] schedule = new Schedule[1];
 		schedule[0] = new Schedule(jobs);
