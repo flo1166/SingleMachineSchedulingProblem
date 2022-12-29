@@ -1,45 +1,52 @@
 package scheduling;
 
 /**
- * This class saves empty slots in the schedule.
- * @author Florian Korn, André Konersmann
+ * This class extends the job class to implement preemption of jobs.
+ * @author Florian Korn, Andre Konersmann
  *
  */
-public class Preemption {
+public class Preemption extends Job {
 	
 	/**
-	 * This represents the empty slot in a schedule
+	 * The end of the job.
 	 */
-	private int emptyCapacity;
+	private int jobEnd;
 	
 	/**
-	 * This is the start period where the empty slot starts
+	 * The remaining processing time of a job.
 	 */
-	private int startPeriod;
-	
-	/**
-	 * This is a constructor, which automatically indicates the end period of the empty slot
-	 * @param emptyCapacity is the slot which can be filled partially by a job
-	 * @param startPeriod is the period when the slot is available
-	 */
-	public Preemption(int emptyCapacity, int startPeriod) {
-		this.emptyCapacity = emptyCapacity;
-		this.startPeriod = startPeriod;
-	}
+	public int remainingP;
 
 	/**
-	 * The getter for the empty capacity
-	 * @return the slot which can be filled partially by a job
+	 * This is a super class constructor.
+	 * @param string the name of a job
+	 * @param p the production length
+	 * @param r the release date
+	 * @param d the due date
 	 */
-	public int getEmptyCapacity() {
-		return emptyCapacity;
+	public Preemption(String name, int p, int r, int d) {
+		super(name, p, r, d);
+		this.remainingP = p;
 	}
 	
 	/**
-	 * The getter for the start period
-	 * @return start period of the empty capacity
+	 * The setter for the end of the job
+	 * @param jobEnd, when the job is finished
 	 */
-	public int getStartPeriod() {
-		return startPeriod;
+	public void setJobEnd(int jobEnd) {
+		this.jobEnd = jobEnd;
 	}
+	
+	/**
+	 * The getter for the job.
+	 * @return when the job is finished
+	 */
+	public int getJobEnd() {
+		return jobEnd;
+	}
+
+
+	
+	
+
 }

@@ -1,7 +1,7 @@
 package solver;
 
-import scheduling.Job;
-import scheduling.Schedule;
+import branchandbound.BranchAndBound;
+import scheduling.Preemption;
 
 /**
  * This class solves a single machine scheduling problem.
@@ -17,15 +17,19 @@ public class Solver {
 	 */
 	public static void main(String[] args) {
 		
-		Job[] jobs = new Job[4];
-		jobs[1] = new Job("A", 6, 0, 14);
-		jobs[0] = new Job("B", 3, 1, 17);
-		jobs[3] = new Job("C", 8, 5, 15);
-		jobs[2] = new Job("D", 5, 8, 13);
+		Preemption[] jobs = new Preemption[4];
+		jobs[0] = new Preemption("A", 6, 0, 14);
+		jobs[1] = new Preemption("B", 3, 1, 17);
+		jobs[2] = new Preemption("C", 8, 5, 15);
+		jobs[3] = new Preemption("D", 5, 8, 13);
 		
-		Schedule[] schedule = new Schedule[1];
-		schedule[0] = new Schedule(jobs);
-		System.out.println(schedule[0].getMaxLateness());
+		BranchAndBound schedule = new BranchAndBound(jobs);
+		Preemption[] newschedule = schedule.selectionSortEDD(jobs, true);
+		for (Preemption sch : newschedule) {
+			System.out.println(sch.getName());
+		}
+		
+		System.out.println(schedule.rootProblem());
 	}
 
 }

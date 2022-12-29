@@ -4,149 +4,112 @@ package scheduling;
 public class Schedule {
 	
 	// the sequence of jobs in the schedule
-	private Job[] sequence;
+	public Preemption[] sequence;
 	
 	// full parameter constructor
-	public Schedule(Job[] sequence) {
+	public Schedule(Preemption[] sequence) {
 		this.sequence = sequence;
 	}
 	
-	public int getMaxLateness() {
-		// sum variable
-		int[] allLateness = new int[sequence.length];
+	/**
+	 * Creates a new sequence of jobs by swapping job k and k+1
+	 * @param delayedJob is the index of the job to be delayed
+	 * @param swapedJob is the index of the job to be swapped
+	 * @return a sequence of jobs with swapped jobs
+	 */
+	public Preemption[] swapJobs(Preemption[] sequence, Preemption delayedJob, Preemption swappedJob) {
 		
-		// the current period
-		int currentPeriod = 0;
-		
-		// the previous period
-		int previousPeriod = 0;
-		
-		// the current maximum
-		int maxLateness = 0;
-		
-		// the job preemption correction
-		Preemption[] preemptions = null;
+		Preemption[] newSequence = new Preemption[sequence.length];
 		
 		for (int i = 0; i < sequence.length; i++) {
-			// add the job's tardiness
-			allLateness[i] = sequence[i].getLateness(currentPeriod);
-			// change the maximum lateness
-			if (maxLateness < allLateness[i]) {
-				maxLateness = allLateness[i];
-			}
-			
-			// set previous period
-			previousPeriod = currentPeriod;
-			
-			// set current period
-			currentPeriod = sequence[i].getCompletionDate(currentPeriod);
-			
-			System.out.println(sequence[i].getName());
-			// job preemption from previous period
-			System.out.print(" if preemption is filled ");
-			System.out.println(preemptions != null);
-			if (preemptions != null) {
-				int j = 0;
-				for (Preemption prem : preemptions) {	
-					System.out.print("compare start with release date: ");
-					System.out.println(prem.getStartPeriod() >= sequence[i].getR());
-					if (prem.getStartPeriod() >= sequence[i].getR()) {
-						currentPeriod -= prem.getEmptyCapacity();
-						preemptions = deletePreemption(preemptions, j);
-						j += 1;
-						System.out.println(prem.getEmptyCapacity());
-					}
-				}
-			}
-			System.out.println("current period " + currentPeriod);
-			
-			// setting new preemption
-			System.out.print("previous period " + previousPeriod + " new preemption ");
-			System.out.println(previousPeriod < sequence[i].getR());
-			if (previousPeriod < sequence[i].getR()) {
-				preemptions = addPreemption(preemptions, previousPeriod, sequence[i].getPreemption(previousPeriod));
-			}
-		}
-		return maxLateness;
-	}
-	
-	// get all the neighbors
-	public Schedule[] getNeighbors() {
-		Schedule[] neighbors = new Schedule[sequence.length - 1];
-		
-		for (int i = 0; i < neighbors.length; i++) {
-			neighbors[i] = new Schedule(swapJobs(i));
-			System.out.println(neighbors[i]);
-		}
-		
-		return neighbors;
-	}
-	
-	// creates a new sequence of jobs by swapping job k and k+1
-	private Job[] swapJobs(int k) {
-		Job[] newSequence = new Job[sequence.length];
-		
-		for (int i = 0; i < sequence.length; i++) {
-			if (i == k) {
-				newSequence[i] = sequence[k+1];
-			} else if (i == k+1) {
-				newSequence[i] = sequence[k];
+			if (sequence[i].getName() == delayedJob.getName()) {
+				newSequence[i] = swappedJob;
+			} else if (sequence[i].getName() == swappedJob.getName()) {
+				newSequence[i] = delayedJob;
 			} else {
 				newSequence[i] = sequence[i];
 			}
 		}
-		
 		return newSequence;
-	}	
-	
-	
-	public Preemption[] deletePreemption(Preemption[] preemptions, int index) {
-		
-		// initial variables
-		Preemption[] newPreemptions = new Preemption[preemptions.length - 1];
-		int j = 0;
-		
-		if (preemptions != null && preemptions.length != 1) {
-			// copy array
-			for (int i = 0; i < preemptions.length; i++) {
-				if (i == index) {
-				} else {
-					newPreemptions[j] = preemptions[i];
-					j += 1;
-				}
-			}
-		} else {
-			newPreemptions = null;
-		}
-		return newPreemptions;
 	}
 	
 	/**
-	 * This method adds a preemption to a given array
-	 * @param preemptions the allready saved preemptions
-	 * @param startPeriod of the new preemption
-	 * @param emptyCapacity of the new preemption
-	 * @return array with old and new preemtpion
+	 * This method builds a schedule to get the job end to calculate the maximum lateness
+	 * @param sequence of jobs
+	 * @return sequence with the end of the jobs
 	 */
-	public Preemption[] addPreemption(Preemption[] preemptions, int startPeriod, int emptyCapacity) {
+	public Preemption[] buildSchedule(Preemption[] sequence) {
 		
-		// initial variables
-		int size = 0;
+		Preemption[] localSequence = sequence;
+		int currentPeriod = sequence[0].getR();
 		
-		if (preemptions != null) {
-			size = preemptions.length;
+		// variation of jobs
+		for (int i = 0; i < sequence.length; i++) {
+			
+			// go through periods until job is exhausted
+			while (localSequence[i].remainingP != 0) {
+				
+					// check if neighbor is released, if true then swapJobs, otherwise none
+					if (i != localSequence.length - 1 && localSequence[i+1].getR() == currentPeriod) {
+						localSequence = swapJobs(localSequence, localSequence[i], localSequence[i+1]);
+					}
+					// check if current job is released, if true then adjust remainingP, otherwise none
+					if (localSequence[i].getR() <= currentPeriod) {
+						localSequence[i].remainingP -= 1;
+					}
+					// count next period
+					currentPeriod += 1;
+				}	
+			
+			// set job end to current period
+			localSequence[i].setJobEnd(currentPeriod);
 		}
-		
-		Preemption[] newPreemptions = new Preemption[size + 1];
-		
-		// copy array
-		if (preemptions != null) {
-			for (int i = 0; i < preemptions.length; i++) {
-				newPreemptions[i] = preemptions[i];
-			}
-		} 
-		newPreemptions[size] = new Preemption(emptyCapacity, startPeriod);
-
-		return newPreemptions;
+		return localSequence;
 	}
+	
+	/**
+	 * This method calculates the maximum lateness of a given sequence of jobs
+	 * @param sequence of jobs
+	 * @return maximum lateness in a sequence of jobs
+	 */
+	public int maxLateness(Preemption[] sequence) {
+		
+		buildSchedule(sequence);		
+		int jobLateness = 0;
+		int maxLateness = 0;
+		
+		for (int i = 0; i < sequence.length; i++) {
+			jobLateness = sequence[i].getJobEnd() - sequence[i].getD();
+			if (jobLateness > maxLateness) {
+				maxLateness = jobLateness;
+			}
+		}
+		printSchedule(sequence);
+		return maxLateness;
+	}
+	
+	/**
+	 * This method prints a schedule (with job name and job end)
+	 * @param sequence of jobs
+	 */
+	public void printSchedule(Preemption[] sequence) {
+		for (int i = 0; i < sequence.length; i++) {
+			System.out.println(sequence[i].getName() + " ends in: " + sequence[i].getJobEnd());
+		}
+	}
+// DEPRECATED formally used in buildSchedule()
+//	/**
+//	 * This method calculates the remaining processing time of a sequence of jobs.
+//	 * @param sequence of jobs
+//	 * @return remaining processing time of all jobs
+//	 */
+//	public int calcRemainingP(Preemption[] sequence) {
+//		
+//		int remainingP = 0;
+//		
+//		for (Preemption job : sequence) {
+//			remainingP += job.getRemainingP();
+//		}
+//		return remainingP;
+//	}
 }

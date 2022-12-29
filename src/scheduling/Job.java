@@ -73,32 +73,4 @@ public class Job {
 	public int getD() {
 		return d;
 	}
-	
-	/**
-	 * Calculate the lateness of a job.
-	 * @param startDate is the date to start the job
-	 * @return lateness of the job
-	 */
-	public int getLateness(int startDate) {
-		int completionDate = getCompletionDate(startDate);
-		
-		return completionDate - d;
-	}
-	
-	/**
-	 * Calculate the completion date for a given date.
-	 * @param startDate is the date to start the job
-	 * @return completion date of the job
-	 */
-	public int getCompletionDate(int startDate) {
-		if (startDate > r) {
-			return startDate + p;
-		} else {
-			return r + p;
-		}
-	}
-	
-	public int getPreemption(int startDate) {
-		return r - startDate;
-	}
 }
