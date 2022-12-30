@@ -25,12 +25,12 @@ public class BranchAndBound extends Schedule {
 	 */
 	public Preemption[] selectionSortEDD(Preemption[] sequence, boolean ascending) {
 		
-		for(int i = 0; i < sequence.length; i++) {
+		for (int i = 0; i < sequence.length; i++) {
 			
 			// find min / max
 			int minMax = i;
 			
-			for(int j = i + 1; j < sequence.length; j++) {
+			for (int j = i + 1; j < sequence.length; j++) {
 				if(ascending && sequence[j].getD() < sequence[minMax].getD()) {
 					minMax = j;
 				} else if (!ascending && sequence[j].getD() > sequence[minMax].getD()) {
@@ -51,7 +51,47 @@ public class BranchAndBound extends Schedule {
 	 */
 	public int rootProblem() {
 		
-		Preemption[] currentSequence = selectionSortEDD(sequence, true);
-		return maxLateness(currentSequence);
+		Preemption[] EDDSequence = selectionSortEDD(sequence, true);
+		return maxLateness(EDDSequence, true);
+	}
+	
+	public BranchAndBound[] BBLogic() {
+		
+		Preemption[] currentSequence = null;
+
+		
+		for (int i = 0; i < sequence.length; i++) {
+			currentSequence = branching(i);
+
+		}
+	}
+	
+	/**
+	 * This method generates our sequence to calculate the maximum lateness until a given depth
+	 * @param depth of the branch and bound problem
+	 * @return a sequence of jobs with forced order until depth and after that the EDD logic
+	 */
+	public Preemption[] branching(int depth) {
+		
+		Preemption[] EDDSequence = selectionSortEDD(sequence, true);
+		Preemption[] currentSequence = sequence;
+		int currentMaxLateness = -1;
+		Preemption[] currentSolution = null;
+		
+		for (int i = 0; i < sequence.length; i++) {
+			currentSequence[i + 1] = EDDSequence[i + 1];
+			}
+		
+		currentMaxLateness = maxLateness(currentSequence, false);
+		currentSolution = new Preemption[currentSequence.length + 1];
+		
+		// copy sequence until specified sequence
+		for (int j = 0; j == depth; j++) {
+				currentSolution[j] = currentSequence[j];
+				}	
+		// save max lateness
+		currentSolution[currentSolution.length - 1] = currentMaxLateness;
+		
+		return currentSolution;
 	}
 }

@@ -27,6 +27,7 @@ public class Preemption extends Job {
 	public Preemption(String name, int p, int r, int d) {
 		super(name, p, r, d);
 		this.remainingP = p;
+		this.jobEnd = -1;
 	}
 	
 	/**
