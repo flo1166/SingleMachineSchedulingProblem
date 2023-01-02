@@ -22,20 +22,16 @@ public class Solver {
 		jobs[2] = new Preemption("C", 8, 5, 15);
 		jobs[3] = new Preemption("D", 5, 8, 13);
 		
-		BranchAndBound schedule = new BranchAndBound(jobs);
+		BranchAndBound schedule = new BranchAndBound();
 		
-		Preemption[] jobs2 = new Preemption[4];
-		jobs2[2] = new Preemption("A", 6, 0, 14);
-		jobs2[0] = new Preemption("B", 3, 1, 17);
-		jobs2[3] = new Preemption("C", 8, 5, 15);
-		jobs2[1] = new Preemption("D", 5, 8, 13);
-		BranchAndBound schedule2 = new BranchAndBound(jobs2);
-		
-		int lowerBound = schedule.rootProblem();
-		System.out.println("The lower bound of the root is: " + lowerBound);
-		
-		int newBound = schedule2.maxLateness(jobs2, false);
-		System.out.println("The lower bound of the problem is: " + newBound);
+		//Preemption[] sequence = schedule.getNodeJobs(schedule.nodes[1]);
+	
+		//schedule.rootProblem(jobs);
+		//schedule.nodes[1].setMaxLateness(schedule.branching(schedule.nodes[1], jobs));
+		//System.out.println("The maximum lateness of " + schedule.nodes[1].getJob().getName() + " is " + schedule.nodes[1].getMaxLateness());
+	
+		schedule.rootProblem(jobs);	
+		System.out.println("the root lateness: " + schedule.nodes[0].getMaxLateness());
+		//schedule.branching(jobs);
 	}
-
 }

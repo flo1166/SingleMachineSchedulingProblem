@@ -45,9 +45,4 @@ public class Preemption extends Job {
 	public int getJobEnd() {
 		return jobEnd;
 	}
-
-
-	
-	
-
 }
