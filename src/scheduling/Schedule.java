@@ -40,10 +40,17 @@ public class Schedule extends BranchAndBound {
 		return newSequence;
 	}
 	
-	public static Preemption[] buildSchedule(Preemption[] sequence, boolean root) {
+	/**
+	 * This method builds a schedule to get the job end to calculate the maximum lateness
+	 * @param EDDsequence of jobs sorted with EDD logic
+	 * @param sequence of jobs (until current node)
+	 * @param root if true then this is the root node (so released jobs can fill empty slots, otherwise start of schedule is release date of first job
+	 * @return sequence with the end of the jobs
+	 */
+	public static Preemption[] buildSchedule(Preemption[] EDDsequence, Preemption[] sequence, boolean root) {
 		
 		// reset jobs with new remaining p and empty job end
-		for (Preemption seq : sequence) {
+		for (Preemption seq : EDDsequence) {
 			if (seq.getJobEnd() != -1) {
 				seq.setJobEnd(-1);
 				seq.remainingP = seq.getP();
@@ -51,39 +58,62 @@ public class Schedule extends BranchAndBound {
 		}
 		
 		// initial variables
-		int currentPeriod = sequence[0].getR();
-		Preemption[] localSequence = sequence;
+		int currentPeriod = EDDsequence[0].getR();
+		if (sequence != null) {
+			currentPeriod = sequence[0].getR();
+		} 
 		
 		// if root true, then fill empty slots before the release of the first job with other jobs
 		if (root) {
-			localSequence = rootSolver(localSequence, currentPeriod);
+			EDDsequence = rootSolver(EDDsequence, currentPeriod);
 		}
 		
-		// variation of jobs
-		for (int i = 0; i < localSequence.length; i++) {
+		// sequence of fixed jobs without preemption
+		if (sequence != null) {
+			for (int i = 0; i < sequence.length; i++) {
+				while (sequence[i].remainingP != 0) {
+					if (sequence[i].getR() <= currentPeriod) {
+						sequence[i].remainingP -= 1;
+					}
+					currentPeriod += 1;
+					if (sequence[i].remainingP == 0 && sequence[i].getJobEnd() == -1) {
+						sequence[i].setJobEnd(currentPeriod);
+					}
+				}
+			}
+		}
+		
+		// EDDsequence of jobs with preemption
+		for (int i = 0; i < EDDsequence.length; i++) {
 			// go through periods until job is exhausted
-			while (localSequence[i].remainingP != 0) {
-				if (i == localSequence.length - 1 || localSequence[i+1].getR() != currentPeriod) {
-					if (localSequence[i].getR() <= currentPeriod) {
-						localSequence[i].remainingP -= 1;
+			while (EDDsequence[i].remainingP != 0) {
+				// if end of sequence or neighbor is not released
+				if (i == EDDsequence.length - 1 || EDDsequence[i+1].getR() != currentPeriod) {
+					// if sequence is released
+					if (EDDsequence[i].getR() <= currentPeriod) {
+						EDDsequence[i].remainingP -= 1;
 						currentPeriod += 1;
-						// set job end to current period (if dummy "-1" is set, otherwise job end is allready set)
-						if (localSequence[i].remainingP == 0 && localSequence[i].getJobEnd() == -1) {
-							localSequence[i].setJobEnd(currentPeriod);
+						// set job end to current period (if dummy "-1" is set, otherwise job end is already set)
+						if (EDDsequence[i].remainingP == 0 && EDDsequence[i].getJobEnd() == -1) {
+							EDDsequence[i].setJobEnd(currentPeriod);
 						}
+					// if sequence is not released
 					} else {
-						if (localSequence.length - 1 != i) {
-							localSequence = swapJobs(localSequence, localSequence[i], localSequence[i+1]);
+						// if not on end of sequence swap jobs
+						if (EDDsequence.length - 1 != i) {
+							EDDsequence = swapJobs(EDDsequence, EDDsequence[i], EDDsequence[i+1]);
+						// if on end no job is suitable, therefore count period +1
 						} else {
 							currentPeriod += 1;
 						}
 					}
+				// if not on the end of sequence and neighbor is released, swap jobs
 				} else {
-					localSequence = swapJobs(localSequence, localSequence[i], localSequence[i+1]);
+					EDDsequence = swapJobs(EDDsequence, EDDsequence[i], EDDsequence[i+1]);
 				}
 			}
 		}
-		return localSequence;
+		return EDDsequence;
 	}
 	
 	/**
@@ -167,7 +197,7 @@ public class Schedule extends BranchAndBound {
 			int j = 1;
 			for (int i = 0; i < currentPeriod; i++) {
 				// if remaining p is exhausted, change job and set job end
-				if (sequence[j].remainingP == 0) {
+				if (sequence[j].remainingP == 0 && sequence[j].getJobEnd() == -1) {
 					sequence[j].setJobEnd(i);
 					j += 1;
 				}
@@ -189,24 +219,26 @@ public class Schedule extends BranchAndBound {
 	
 	/**
 	 * This method calculates the maximum lateness of a given sequence of jobs
-	 * @param sequence of jobs
+	 * @param EDDsequence of all jobs sorted with EDD logic
+	 * @param sequence of jobs (until current node)
 	 * @param root true if it is a root problem, false if not
 	 * @return maximum lateness in a sequence of jobs
 	 */
-	public static int maxLateness(Preemption[] sequence, boolean root) {
+	public static int maxLateness(Preemption[] EDDsequence, Preemption[] sequence, boolean root) {
 		
-		buildSchedule(sequence, root);		
+		buildSchedule(EDDsequence, sequence, root);		
 		int jobLateness = 0;
 		int maxLateness = 0;
 		
-		for (int i = 0; i < sequence.length; i++) {
-			jobLateness = sequence[i].getJobEnd() - sequence[i].getD();
+		for (int i = 0; i < EDDsequence.length; i++) {
+			jobLateness = EDDsequence[i].getJobEnd() - EDDsequence[i].getD();
 			if (jobLateness > maxLateness) {
 				maxLateness = jobLateness;
 			}
 		}
-		printSchedule(sequence, root);
+		printSchedule(EDDsequence, root);
 		System.out.println("Max Lateness of current schedule: " + maxLateness);
+		System.out.println();
 		return maxLateness;
 	}
 	

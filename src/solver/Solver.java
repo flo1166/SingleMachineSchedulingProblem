@@ -31,7 +31,6 @@ public class Solver {
 		//System.out.println("The maximum lateness of " + schedule.nodes[1].getJob().getName() + " is " + schedule.nodes[1].getMaxLateness());
 	
 		schedule.rootProblem(jobs);	
-		System.out.println("the root lateness: " + schedule.nodes[0].getMaxLateness());
-		//schedule.branching(jobs);
+		schedule.branching(jobs);
 	}
 }

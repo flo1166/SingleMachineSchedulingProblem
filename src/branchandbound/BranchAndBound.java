@@ -64,7 +64,7 @@ public class BranchAndBound {
 
 		// set node root problem ****
 		setNodes(null, null);
-		nodes[nodes.length - 1].setMaxLateness(Schedule.maxLateness(EDDSequence, true));
+		nodes[nodes.length - 1].setMaxLateness(Schedule.maxLateness(EDDSequence, null, true));
 		
 		// first variation
 		buildDepth(sequence, nodes[nodes.length - 1]);
@@ -158,24 +158,24 @@ public class BranchAndBound {
 		}
 		System.out.println();
 		
-		// build full sequence with EDD (if current sequence is smaller than the length of all jobs
-		for (int i = 0; i < currentSequence.length; i++) {
-			while (currentSequence[i] != EDDSequence[i]) {
-				for (int j = 0; j < EDDSequence.length; j++) {
-					if (EDDSequence[j] == currentSequence[i]) {
-						EDDSequence = Schedule.swapJobs(EDDSequence, EDDSequence[j - 1], EDDSequence[j]);
-						j = EDDSequence.length;
-					}
-				}
-			}
-		}
-		currentSequence = EDDSequence;
-		for (Preemption curr : currentSequence) {
-			System.out.println("new current: " + curr.getName());
-		}
+//		// build full sequence with EDD (if current sequence is smaller than the length of all jobs
+//		for (int i = 0; i < currentSequence.length; i++) {
+//			while (currentSequence[i] != EDDSequence[i]) {
+//				for (int j = 0; j < EDDSequence.length; j++) {
+//					if (EDDSequence[j] == currentSequence[i]) {
+//						EDDSequence = Schedule.swapJobs(EDDSequence, EDDSequence[j - 1], EDDSequence[j]);
+//						j = EDDSequence.length;
+//					}
+//				}
+//			}
+//		}
+//		currentSequence = EDDSequence;
+//		for (Preemption curr : currentSequence) {
+//			System.out.println("new current: " + curr.getName());
+//		}
 		
 		// calculate maxLateness
-		maxLateness = Schedule.maxLateness(currentSequence, false);
+		maxLateness = Schedule.maxLateness(EDDSequence, currentSequence, false);
 		
 		return maxLateness;
 	}
@@ -202,17 +202,16 @@ public class BranchAndBound {
 	 */
 	public void branching(Preemption[] sequence) {
 		
-		int upperBound = 0;
+		int upperBound = 1;
 		
 		for (int i = 1; i < nodes.length; i++) {
 			if (nodes[upperBound].getMaxLateness() > nodes[i].getMaxLateness()) {
 				upperBound = i;
 			}
 		}
-		
-		for (int j = 1; j < nodes.length; j++) {
-			buildDepth(sequence, nodes[upperBound]);
-		}
+		System.out.println("Upper bound: " + nodes[upperBound].getJob().getName());
+		System.out.println();
+		buildDepth(sequence, nodes[upperBound]);
 	}
 	
 	/**
@@ -220,16 +219,18 @@ public class BranchAndBound {
 	 * @param sequence of all jobs
 	 * @param parentJob that is set in the new node
 	 */
-	public void buildDepth(Preemption[] sequence, Node parentJob) {
+	public void buildDepth(Preemption[] sequence, Node job) {
 		
-		Preemption[] usedSequence = getNodeJobs(parentJob);
+		Preemption[] usedSequence = getNodeJobs(job);
 		
-		for (int i = 0; i < sequence.length; i++) 
+		for (int i = 0; i < sequence.length; i++) {
 			for (int j = 0; j < usedSequence.length; j++) {
-				if (sequence[i] == usedSequence[j]) {
-					i++;
+				if(usedSequence[j] == sequence[i]) {
+					j = usedSequence.length;
+				} else {
+					calcNodeMaxLateness(sequence[i], job.getJob(), sequence);
+				}
 			}
-			calcNodeMaxLateness(sequence[i], parentJob.getJob(), sequence);	
 		}
 	}
 }
