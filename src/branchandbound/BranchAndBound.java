@@ -16,6 +16,11 @@ public class BranchAndBound {
 	public Node[] nodes;
 	
 	/**
+	 * This variable tells us until which node we solved the problem
+	 */
+	public int depthLevel = 1;
+	
+	/**
 	 * This is a super constructor.
 	 * @param sequence of jobs
 	 */
@@ -29,7 +34,7 @@ public class BranchAndBound {
 	 * @param job which represents a node in a tree structure of a branch and bound problem
 	 * @param parentJob is the job with a higher hierarchy
 	 */
-	public void setNodes(Preemption job, Preemption parentJob) {
+	public void setNodes(Preemption job, Preemption parentJob, Preemption parentParentJob) {
 		
 		Node[] oldNodes = nodes;
 		Node[] currentNodes;
@@ -46,7 +51,7 @@ public class BranchAndBound {
 			if (currentNodes.length != 1 && i < oldNodes.length) {
 				currentNodes[i] = oldNodes[i];
 			} else {
-				currentNodes[i] = new Node(job, parentJob);
+				currentNodes[i] = new Node(job, parentJob, parentParentJob);
 			}
 		}
 		
@@ -63,10 +68,10 @@ public class BranchAndBound {
 		Preemption[] EDDSequence = Schedule.selectionSortEDD(sequence, true);
 
 		// set node root problem ****
-		setNodes(null, null);
+		setNodes(null, null, null);
 		nodes[nodes.length - 1].setMaxLateness(Schedule.maxLateness(EDDSequence, null, true));
 		
-		// first variation
+		// first depth
 		buildDepth(sequence, nodes[nodes.length - 1]);
 	}
 	
@@ -97,7 +102,7 @@ public class BranchAndBound {
 				
 				// search for parent node as new current node
 				for (int j = 0; j < nodes.length; j++) {
-					if (nodes[j].getJob() == currentNode.getParentJob()) {
+					if (nodes[j].getJob() == currentNode.getParentJob() && nodes[j].getParentJob() == currentNode.getParentParentJob()) {
 						currentNode = nodes[j];
 						j = nodes.length;
 					}
@@ -111,7 +116,6 @@ public class BranchAndBound {
 			currentSequence2 = sortJobs(currentSequence2);
 			currentSequence = currentSequence2;
 		}
-		
 		return currentSequence;
 	}
 	
@@ -129,7 +133,6 @@ public class BranchAndBound {
 			currentSequence[i] = sequence[indexSeq];
 			indexSeq -= 1;	
 		}
-		
 		return currentSequence;
 	}
 	
@@ -151,29 +154,6 @@ public class BranchAndBound {
 		// build sequence for calculation of maximum lateness of all jobs
 		Preemption[] currentSequence = getNodeJobs(node);
 		
-		// print
-		System.out.println("The current sequence from the tree for " + currentSequence[currentSequence.length - 1].getName());
-		for (Preemption job : currentSequence) {
-			System.out.print(job.getName() + ", ");
-		}
-		System.out.println();
-		
-//		// build full sequence with EDD (if current sequence is smaller than the length of all jobs
-//		for (int i = 0; i < currentSequence.length; i++) {
-//			while (currentSequence[i] != EDDSequence[i]) {
-//				for (int j = 0; j < EDDSequence.length; j++) {
-//					if (EDDSequence[j] == currentSequence[i]) {
-//						EDDSequence = Schedule.swapJobs(EDDSequence, EDDSequence[j - 1], EDDSequence[j]);
-//						j = EDDSequence.length;
-//					}
-//				}
-//			}
-//		}
-//		currentSequence = EDDSequence;
-//		for (Preemption curr : currentSequence) {
-//			System.out.println("new current: " + curr.getName());
-//		}
-		
 		// calculate maxLateness
 		maxLateness = Schedule.maxLateness(EDDSequence, currentSequence, false);
 		
@@ -184,12 +164,13 @@ public class BranchAndBound {
 	 * This method sets a node and calculates the node max lateness
 	 * @param job is the node
 	 * @param parentJob is the job in a higher hierarchy than the job
+	 * @param parentParentJob is the parent of the parent job (in a higher higher hierarchy)
 	 * @param sequence of all available jobs
 	 */
-	public int calcNodeMaxLateness(Preemption job, Preemption parentJob, Preemption[] sequence) {
+	public int calcNodeMaxLateness(Preemption job, Preemption parentJob, Preemption parentParentJob, Preemption[] sequence) {
 		
 		// set node
-		setNodes(job, parentJob);
+		setNodes(job, parentJob, parentParentJob);
 		// set maximum lateness in node
 		nodes[nodes.length - 1].setMaxLateness(nodeLateness(nodes[nodes.length - 1], sequence));
 		
@@ -202,14 +183,16 @@ public class BranchAndBound {
 	 */
 	public void branching(Preemption[] sequence) {
 		
-		int upperBound = 1;
+		int upperBound = depthLevel;
 		
-		for (int i = 1; i < nodes.length; i++) {
+		// search for lowest lateness
+		for (int i = depthLevel; i < nodes.length; i++) {
 			if (nodes[upperBound].getMaxLateness() > nodes[i].getMaxLateness()) {
 				upperBound = i;
 			}
 		}
-		System.out.println("Upper bound: " + nodes[upperBound].getJob().getName());
+		depthLevel += 1; // manipulation for one upper bound chosen
+		System.out.println("The upper bound is " + nodes[upperBound].getJob().getName() + " with max lateness: " + nodes[upperBound].getMaxLateness());
 		System.out.println();
 		buildDepth(sequence, nodes[upperBound]);
 	}
@@ -217,20 +200,61 @@ public class BranchAndBound {
 	/**
 	 * This method establishes another depth level into the branch and bound tree
 	 * @param sequence of all jobs
-	 * @param parentJob that is set in the new node
+	 * @param job that is set in the new node
 	 */
 	public void buildDepth(Preemption[] sequence, Node job) {
 		
 		Preemption[] usedSequence = getNodeJobs(job);
-		
+			
 		for (int i = 0; i < sequence.length; i++) {
-			for (int j = 0; j < usedSequence.length; j++) {
-				if(usedSequence[j] == sequence[i]) {
-					j = usedSequence.length;
-				} else {
-					calcNodeMaxLateness(sequence[i], job.getJob(), sequence);
+			if (!Schedule.checkArrayElement(usedSequence, sequence[i])) {
+				calcNodeMaxLateness(sequence[i], job.getJob(), job.getParentJob(), sequence);
+				if (job.getJob() != null) {
+					depthLevel += 1;
 				}
 			}
 		}
+	}
+	
+	/**
+	 * This method checks if perhaps there is a better solution than our optimal solution
+	 * @param sequence of all jobs
+	 * @return true if there is a better solution, false if not
+	 */
+	public boolean checkOptimalSolution(Preemption[] sequence) {
+		
+		Node[] currentNodes = nodes;
+		Preemption[] usedSequence = getNodeJobs(nodes[nodes.length - 1]);
+		Node optimalSequence = nodes[nodes.length - 1];
+		nodes = new Node[sequence.length];
+		
+		// copy nodes, except the already branched one
+		int j = 0;
+		for (int i = 0; i < sequence.length + 1; i++) {
+			if (currentNodes[i] == null || currentNodes[i].getJob() != usedSequence[0]) {
+				nodes[j] = currentNodes[i];
+				j += 1;
+			}
+		}
+		System.out.print("Checked optimal solution: ");
+		for (Preemption seq : usedSequence) {
+			System.out.print(seq.getName() + ", ");
+		}
+		System.out.println();
+		
+		// check for optimal solution
+		for (int k = 1; k < nodes.length; k++) {
+			if (optimalSequence.getMaxLateness() > nodes[k].getMaxLateness()) {
+				System.out.println("More promising solution found.");
+				System.out.println("Continue with branching: " + nodes[k].getJob().getName());
+				return true;
+			}
+		}
+		System.out.print("Best solution is: ");
+		for (Preemption seq : usedSequence) {
+			System.out.print(seq.getName() + ", ");
+		}
+		System.out.println();
+		return false;
 	}
 }

@@ -24,13 +24,16 @@ public class Solver {
 		
 		BranchAndBound schedule = new BranchAndBound();
 		
-		//Preemption[] sequence = schedule.getNodeJobs(schedule.nodes[1]);
-	
-		//schedule.rootProblem(jobs);
-		//schedule.nodes[1].setMaxLateness(schedule.branching(schedule.nodes[1], jobs));
-		//System.out.println("The maximum lateness of " + schedule.nodes[1].getJob().getName() + " is " + schedule.nodes[1].getMaxLateness());
-	
 		schedule.rootProblem(jobs);	
-		schedule.branching(jobs);
+		
+		for (int i = 1; i < jobs.length; i++) {
+			schedule.branching(jobs);
+		}
+		
+		while (schedule.checkOptimalSolution(jobs)) {
+			for (int i = 1; i < schedule.nodes.length - 1; i++) {
+				schedule.branching(jobs);
+			}
+		}
 	}
 }

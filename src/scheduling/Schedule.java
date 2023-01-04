@@ -3,19 +3,11 @@ package scheduling;
 import branchandbound.BranchAndBound;
 
 /**
- * This class represents a schedule of jobs in the single machine scheduling problem
+ * This class extends the branch and bound with methods.
  * @author Florian Korn, Andre Konersmann
  *
  */
 public class Schedule extends BranchAndBound {
-	
-	// the sequence of jobs in the schedule
-	public Preemption[] sequence;
-	
-	// full parameter constructor
-	public Schedule(Preemption[] sequence) {
-		this.sequence = sequence;
-	}
 	
 	/**
 	 * Creates a new sequence of jobs by swapping job k and k+1
@@ -27,6 +19,7 @@ public class Schedule extends BranchAndBound {
 	public static Preemption[] swapJobs(Preemption[] sequence, Preemption delayedJob, Preemption swappedJob) {
 		
 		Preemption[] newSequence = new Preemption[sequence.length];
+		swappedJob.preemption = true;
 		
 		for (int i = 0; i < sequence.length; i++) {
 			if (sequence[i].getName() == delayedJob.getName()) {
@@ -50,12 +43,7 @@ public class Schedule extends BranchAndBound {
 	public static Preemption[] buildSchedule(Preemption[] EDDsequence, Preemption[] sequence, boolean root) {
 		
 		// reset jobs with new remaining p and empty job end
-		for (Preemption seq : EDDsequence) {
-			if (seq.getJobEnd() != -1) {
-				seq.setJobEnd(-1);
-				seq.remainingP = seq.getP();
-			}
-		}
+		resetPJobs(EDDsequence);
 		
 		// initial variables
 		int currentPeriod = EDDsequence[0].getR();
@@ -70,38 +58,81 @@ public class Schedule extends BranchAndBound {
 		
 		// sequence of fixed jobs without preemption
 		if (sequence != null) {
-			for (int i = 0; i < sequence.length; i++) {
-				while (sequence[i].remainingP != 0) {
-					if (sequence[i].getR() <= currentPeriod) {
-						sequence[i].remainingP -= 1;
-					}
-					currentPeriod += 1;
-					if (sequence[i].remainingP == 0 && sequence[i].getJobEnd() == -1) {
-						sequence[i].setJobEnd(currentPeriod);
-					}
-				}
-			}
+			currentPeriod = jobWithoutPreemption(sequence, currentPeriod);
 		}
 		
 		// EDDsequence of jobs with preemption
-		for (int i = 0; i < EDDsequence.length; i++) {
+		EDDsequence = jobPreemption(EDDsequence, currentPeriod);
+		
+		return EDDsequence;
+	}
+	
+	/**
+	 * This method resets all jobs (no job end set and remaining p equals the p of the job).
+	 * @param sequence of jobs to be reseted
+	 */
+	public static void resetPJobs(Preemption[] sequence) {
+		
+		for (Preemption seq : sequence) {
+			if (seq.getJobEnd() != -1) {
+				seq.setJobEnd(-1);
+				seq.remainingP = seq.getP();
+				seq.preemption = false;
+			}
+		}
+	}
+	
+	/**
+	 * This method changes the p and job end in jobs without preemption
+	 * @param sequence of jobs to be changed (only forced sequence is allowed without preemption)
+	 * @param currentPeriod of the calculation
+	 * @return a sequence of jobs with job end and p changed
+	 */
+	public static int jobWithoutPreemption(Preemption[] sequence, int currentPeriod) {
+		
+		for (int i = 0; i < sequence.length; i++) {
+			while (sequence[i].remainingP != 0) {
+				// distract 1 from p if job is released
+				if (sequence[i].getR() <= currentPeriod) {
+					sequence[i].remainingP -= 1;
+				}
+				currentPeriod += 1;
+				// set job end if no remaining p and job end isn't already set
+				if (sequence[i].remainingP == 0 && sequence[i].getJobEnd() == -1) {
+					sequence[i].setJobEnd(currentPeriod);
+				}
+			}
+		}
+		return currentPeriod;
+	}
+	
+	/**
+	 * This method changes the p and job end in jobs with preemption
+	 * @param sequence of jobs to be changed (not forced sequence)
+	 * @param currentPeriod of the calculation
+	 * @return a sequence of jobs with job end and p changed
+	 */
+	public static Preemption[] jobPreemption(Preemption[] sequence, int currentPeriod) {
+		
+		for (int i = 0; i < sequence.length; i++) {
 			// go through periods until job is exhausted
-			while (EDDsequence[i].remainingP != 0) {
+			while (sequence[i].remainingP != 0) {
 				// if end of sequence or neighbor is not released
-				if (i == EDDsequence.length - 1 || EDDsequence[i+1].getR() != currentPeriod) {
+				if (i == sequence.length - 1 || sequence[i+1].getR() != currentPeriod) {
 					// if sequence is released
-					if (EDDsequence[i].getR() <= currentPeriod) {
-						EDDsequence[i].remainingP -= 1;
+					if (sequence[i].getR() <= currentPeriod) {
+						sequence[i].remainingP -= 1;
 						currentPeriod += 1;
 						// set job end to current period (if dummy "-1" is set, otherwise job end is already set)
-						if (EDDsequence[i].remainingP == 0 && EDDsequence[i].getJobEnd() == -1) {
-							EDDsequence[i].setJobEnd(currentPeriod);
+						if (sequence[i].remainingP == 0 && sequence[i].getJobEnd() == -1) {
+							sequence[i].setJobEnd(currentPeriod);
 						}
 					// if sequence is not released
 					} else {
 						// if not on end of sequence swap jobs
-						if (EDDsequence.length - 1 != i) {
-							EDDsequence = swapJobs(EDDsequence, EDDsequence[i], EDDsequence[i+1]);
+						if (sequence.length - 1 != i) {
+							sequence = swapJobs(sequence, sequence[i], sequence[i+1]);
+							
 						// if on end no job is suitable, therefore count period +1
 						} else {
 							currentPeriod += 1;
@@ -109,81 +140,13 @@ public class Schedule extends BranchAndBound {
 					}
 				// if not on the end of sequence and neighbor is released, swap jobs
 				} else {
-					EDDsequence = swapJobs(EDDsequence, EDDsequence[i], EDDsequence[i+1]);
+					sequence = swapJobs(sequence, sequence[i], sequence[i+1]);
 				}
 			}
 		}
-		return EDDsequence;
-	}
-	
-	/**
-	 * This method builds a schedule to get the job end to calculate the maximum lateness
-	 * @param sequence of jobs
-	 * @param root if true then this is the root node (so released jobs can fill empty slots, otherwise start of schedule is release date of first job
-	 * @return sequence with the end of the jobs
-	 */
-//	public static Preemption[] buildSchedule(Preemption[] sequence, boolean root) {
-//		
-//		int currentPeriod = sequence[0].getR();
-//		Preemption[] localSequence = sequence;
-//		
-//		// if root true, then fill empty slots before the release of the first job with other jobs
-//		if (root) {
-//			localSequence = rootSolver(localSequence, currentPeriod);
-//		}
-//		
-//		// variation of jobs
-//		for (int i = 0; i < localSequence.length; i++) {
-//			
-//			// go through periods until job is exhausted
-//			while (localSequence[i].remainingP != 0) {
-//					
-//					// check if neighbor is released, if true then swapJobs, otherwise none
-//					if (i != localSequence.length - 1 && localSequence[i+1].getR() == currentPeriod) {
-//						localSequence = swapJobs(localSequence, localSequence[i], localSequence[i+1]);
-//					}
-//					// adjust remainingP
-//					if (localSequence[i].getR() <= currentPeriod) {
-//						localSequence[i].remainingP -= 1;
-//					} else {
-//						localSequence = neighborReleased(localSequence, i, currentPeriod);
-//					}
-//				
-//					// count next period
-//					currentPeriod += 1;
-//				}	
-//			// set job end to current period (if dummy "-1" is set, otherwise job end is allready set)
-//			if (localSequence[i].remainingP == 0 && localSequence[i].getJobEnd() == -1) {
-//				localSequence[i].setJobEnd(currentPeriod);
-//			}
-//		}
-//		
-//		return localSequence;
-//	}
-	
-	/**
-	 * This method looks up if neighbors have remaining p and adjusts the remaining p accordingly
-	 * @param sequence of jobs
-	 * @param index the current job we are looking at
-	 * @param currentPeriod the period which we want to check
-	 * @return sequence of jobs with adjusted remaining p
-	 */
-	public static Preemption[] neighborReleased(Preemption[] sequence, int index, int currentPeriod) {
-		
-		for (int i = index + 1; i < sequence.length; i++) {
-			if (sequence[i].getR() <= currentPeriod && sequence[i].remainingP != 0) {
-				sequence[i].remainingP -= 1;
-				i = sequence.length - 1;
-				
-				if (sequence[i].getJobEnd() == -1 && sequence[i].remainingP == 0) {
-					sequence[i].setJobEnd(currentPeriod);
-				}
-			}
-		}
-		
 		return sequence;
 	}
-	
+
 	/**
 	 * This method solves a root problem in the branch and bound problem.
 	 * It is needed to fill the empty slots with jobs before the first problem 
@@ -236,9 +199,8 @@ public class Schedule extends BranchAndBound {
 				maxLateness = jobLateness;
 			}
 		}
-		printSchedule(EDDsequence, root);
-		System.out.println("Max Lateness of current schedule: " + maxLateness);
-		System.out.println();
+		printSchedule(EDDsequence, sequence, root, maxLateness);
+
 		return maxLateness;
 	}
 	
@@ -265,7 +227,6 @@ public class Schedule extends BranchAndBound {
 			// swap min/max element into place
 			sequence = swapJobs(sequence, sequence[i], sequence[minMax]);
 		}
-		
 		return sequence;
 	}
 	
@@ -273,16 +234,61 @@ public class Schedule extends BranchAndBound {
 	 * This method prints a schedule (with job name and job end)
 	 * @param sequence of jobs
 	 */
-	public static void printSchedule(Preemption[] sequence, boolean root) {
+	public static void printSchedule(Preemption[] EDDsequence, Preemption[] sequence, boolean root, int maxLateness) {
 		
-		if (root) {
-			System.out.println("The schedule for the root is:");
-		} else {
+		boolean preemption = false;
+		// if it isn't the root node
+		if (sequence != null) {
+			System.out.println("The current node: ");
+			System.out.println(sequence[sequence.length - 1].getName());
+			System.out.println("The forced sequence is:");
+			for (Preemption job : sequence) {
+				System.out.print(job.getName() + ", ");
+			}
+			System.out.println();
 			System.out.println("The schedule is:");
+			
+			for (int i = 0; i < sequence.length; i++) {
+				System.out.println(sequence[i].getName() + ": " + sequence[i].getJobEnd());
+				if (sequence[i].preemption == true) {
+					preemption = true;
+				}
+			}
+		// if it is the root node
+		} else {
+			System.out.println("The schedule for the root is:");
 		}
+		for (int j = 0; j < EDDsequence.length; j++) {
+			if (sequence == null || !checkArrayElement(sequence, EDDsequence[j])) {
+				System.out.println(EDDsequence[j].getName() + ": " + EDDsequence[j].getJobEnd());
+				if (EDDsequence[j].preemption == true) {
+					preemption = true;
+				}
+			}
+		}
+		if (preemption) {
+			System.out.println("With preemption");
+			System.out.println("Max lateness >= " + maxLateness);
+		} else {
+			System.out.println("Without preemption");
+			System.out.println("Max lateness = " + maxLateness);
+		}
+		System.out.println();
+	}
+	
+	/**
+	 * This method checks if a job exists in given sequence
+	 * @param sequence of jobs
+	 * @param Job to look for
+	 * @return true if it exists, false if not
+	 */
+	public static boolean checkArrayElement(Preemption[] sequence, Preemption Job) {
 		
-		for (int i = 0; i < sequence.length; i++) {
-			System.out.println(sequence[i].getName() + " ends in: " + sequence[i].getJobEnd());
+		for (Preemption seq : sequence) {
+		    if (seq == Job) {
+		        return true;
+		    }
 		}
+		return false;
 	}
 }

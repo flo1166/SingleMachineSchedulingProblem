@@ -20,19 +20,25 @@ public class Node {
 	private Preemption parentJob;
 	
 	/**
+	 * The parent of the parent job;
+	 */
+	private Preemption parentParentJob;
+	
+	/**
 	 * The maximum lateness of the sequence, specified sequence until this tree node (job) other jobs as EDD.
 	 */
 	private int maxLateness;
 	
 	/**
-	 * This is a parameter constructor.
+	 * This is a full parameter constructor.
 	 * @param parentNode is the job in a higher hierarchy of the branch and bound problem
 	 */
-	public Node(Preemption job, Preemption parentJob) {
+	public Node(Preemption job, Preemption parentJob, Preemption parentParentJob) {
 		
 		this.job = job;
 		this.parentJob = parentJob;
 		this.maxLateness = -1;
+		this.parentParentJob = parentParentJob;
 	}
 	
 	/**
@@ -60,9 +66,18 @@ public class Node {
 	}
 	
 	/**
+	 * The getter for the parent of the parent job.
+	 * @return the parent of the parent (to identify right node)
+	 */
+	public Preemption getParentParentJob() {
+		return parentParentJob;
+	}
+	
+	/**
 	 * The setter for maximum lateness.
+	 * @param MaxLateness 
 	 */
 	public void setMaxLateness(int MaxLateness) {
 		this.maxLateness = MaxLateness;
-	}
+	}	
 }
