@@ -26,6 +26,11 @@ public class Job {
 	 * The due date - the job becomes tardy afterwards.
 	 */
 	private int d;
+	
+	/**
+	 * This saves if preemption is used in this job (true) or not (false)
+	 */
+	public boolean preemption;
 
 	/**
 	 * The full parameter constructor for a job.
@@ -40,6 +45,7 @@ public class Job {
 		this.p = p;
 		this.r = r;
 		this.d = d;
+		this.preemption = false;
 	}
 	
 	/**
