@@ -34,13 +34,12 @@ public class Job {
 
 	/**
 	 * The full parameter constructor for a job.
-	 * @param string the name of a job
+	 * @param name of a job
 	 * @param p the production length
 	 * @param r the release date
 	 * @param d the due date
 	 */
 	public Job(String name, int p, int r, int d) {
-		super();
 		this.name = name;
 		this.p = p;
 		this.r = r;

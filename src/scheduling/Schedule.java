@@ -11,9 +11,9 @@ public class Schedule extends BranchAndBound {
 	
 	/**
 	 * Creates a new sequence of jobs by swapping job k and k+1
-	 * @param sequence is all jobs
-	 * @param delayedJob is the index of the job to be delayed
-	 * @param swappedJob is the index of the job to be swapped
+	 * @param sequence of all jobs
+	 * @param delayedJob is the job to be delayed
+	 * @param swappedJob is the job to be swapped
 	 * @return a sequence of jobs with swapped jobs
 	 */
 	public static Preemption[] swapJobs(Preemption[] sequence, Preemption delayedJob, Preemption swappedJob) {
@@ -37,10 +37,9 @@ public class Schedule extends BranchAndBound {
 	 * This method builds a schedule to get the job end to calculate the maximum lateness
 	 * @param EDDsequence of jobs sorted with EDD logic
 	 * @param sequence of jobs (until current node)
-	 * @param root if true then this is the root node (so released jobs can fill empty slots, otherwise start of schedule is release date of first job
-	 * @return sequence with the end of the jobs
+	 * @param root if true then this is the root node (so released jobs can fill empty slots before the first job is released, otherwise start of schedule is release date of first job
 	 */
-	public static Preemption[] buildSchedule(Preemption[] EDDsequence, Preemption[] sequence, boolean root) {
+	public static void buildSchedule(Preemption[] EDDsequence, Preemption[] sequence, boolean root) {
 		
 		// reset jobs with new remaining p and empty job end
 		resetPJobs(EDDsequence);
@@ -62,23 +61,20 @@ public class Schedule extends BranchAndBound {
 		}
 		
 		// EDDsequence of jobs with preemption
-		EDDsequence = jobPreemption(EDDsequence, currentPeriod);
-		
-		return EDDsequence;
+		jobPreemption(EDDsequence, currentPeriod);
 	}
 	
 	/**
-	 * This method resets all jobs (no job end set and remaining p equals the p of the job).
+	 * This method resets all jobs (no job end set, remaining p equals the p of the job 
+	 * and preemption is set to false).
 	 * @param sequence of jobs to be reseted
 	 */
 	public static void resetPJobs(Preemption[] sequence) {
 		
 		for (Preemption seq : sequence) {
-			if (seq.getJobEnd() != -1) {
-				seq.setJobEnd(-1);
-				seq.remainingP = seq.getP();
-				seq.preemption = false;
-			}
+			seq.setJobEnd(-1);
+			seq.remainingP = seq.getP();
+			seq.preemption = false;
 		}
 	}
 	
@@ -86,7 +82,7 @@ public class Schedule extends BranchAndBound {
 	 * This method changes the p and job end in jobs without preemption
 	 * @param sequence of jobs to be changed (only forced sequence is allowed without preemption)
 	 * @param currentPeriod of the calculation
-	 * @return a sequence of jobs with job end and p changed
+	 * @return the current period for further calculations
 	 */
 	public static int jobWithoutPreemption(Preemption[] sequence, int currentPeriod) {
 		
@@ -110,9 +106,8 @@ public class Schedule extends BranchAndBound {
 	 * This method changes the p and job end in jobs with preemption
 	 * @param sequence of jobs to be changed (not forced sequence)
 	 * @param currentPeriod of the calculation
-	 * @return a sequence of jobs with job end and p changed
 	 */
-	public static Preemption[] jobPreemption(Preemption[] sequence, int currentPeriod) {
+	public static void jobPreemption(Preemption[] sequence, int currentPeriod) {
 		
 		for (int i = 0; i < sequence.length; i++) {
 			// go through periods until job is exhausted
@@ -144,7 +139,6 @@ public class Schedule extends BranchAndBound {
 				}
 			}
 		}
-		return sequence;
 	}
 
 	/**
@@ -208,6 +202,7 @@ public class Schedule extends BranchAndBound {
 	 * This sorts a sequence of jobs via selection sort.
 	 * @param sequence of jobs
 	 * @param ascending if true, then ascending otherwise decending
+	 * @return a sorted EDD sequence
 	 */
 	public static Preemption[] selectionSortEDD(Preemption[] sequence, boolean ascending) {
 		
@@ -232,8 +227,12 @@ public class Schedule extends BranchAndBound {
 	
 	/**
 	 * This method prints a schedule (with job name and job end)
-	 * @param sequence of jobs
+	 * @param EDDsequence is the sorted sequence with EDD logic
+	 * @param sequence is the forced sequence
+	 * @param root true if it is a root problem, otherwise false
+	 * @param maxLateness is the max lateness of the current node schedule
 	 */
+	 
 	public static void printSchedule(Preemption[] EDDsequence, Preemption[] sequence, boolean root, int maxLateness) {
 		
 		boolean preemption = false;

@@ -31,7 +31,9 @@ public class Node {
 	
 	/**
 	 * This is a full parameter constructor.
-	 * @param parentNode is the job in a higher hierarchy of the branch and bound problem
+	 * @param job is the current job
+	 * @param parentNode is the parent of the current job in a higher hierarchy
+	 * @param parentParentJob is the parent of the parent of the current job in a higher higher hierarchy
 	 */
 	public Node(Preemption job, Preemption parentJob, Preemption parentParentJob) {
 		

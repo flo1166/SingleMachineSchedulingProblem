@@ -4,7 +4,7 @@ import scheduling.Preemption;
 import scheduling.Schedule;
 
 /**
- * This class solves a branch and bound problem.
+ * This class solves a branch and bound problem and represents a branch and bound with nodes.
  * @author Florian Korn, Andre Konersmann
  *
  */
@@ -30,9 +30,12 @@ public class BranchAndBound {
 	
 	/**
 	 * This method manages the nodes for a branch and bound tree. First it copies
-	 * the old nodes and then adds the new node.
+	 * the old nodes and then adds the new node. The parent of the parent job
+	 * is needed to identify the previous node in a backward search when starting
+	 * at a random node in the tree.
 	 * @param job which represents a node in a tree structure of a branch and bound problem
 	 * @param parentJob is the job with a higher hierarchy
+	 * @param parentParentJob is the parent of the parent job
 	 */
 	public void setNodes(Preemption job, Preemption parentJob, Preemption parentParentJob) {
 		
@@ -60,8 +63,9 @@ public class BranchAndBound {
 	}
 	
 	/**
-	 * This method calculates the lower bound of a branch and bound problem (of a sequence of jobs)
-	 * @return maximum lateness of a selection sorted sequence of jobs
+	 * This method initiates the root problem. It sets a empty node and caluclates the maximum lateness of it.
+	 * Afterwards the first depth of the tree is set and calculated
+	 * @param sequence of all jobs
 	 */
 	public void rootProblem(Preemption[] sequence) {
 		
@@ -76,9 +80,10 @@ public class BranchAndBound {
 	}
 	
 	/**
-	 * This method searches all jobs in a given branch and bound tree structure.
+	 * This method searches all jobs in a given branch and bound tree structure until
+	 * the given node.
 	 * @param node is the pointer where we are in the tree structure
-	 * @return sequence with all jobs in branch and bound tree structure
+	 * @return sequence with jobs (including the current node and their parents)
 	 */
 	public Preemption[] getNodeJobs(Node node) {
 		
@@ -137,12 +142,14 @@ public class BranchAndBound {
 	}
 	
 	/**
-	 * This method generates our sequence to calculate the maximum lateness until a given node
-	 * @param node is the node we want to look at
-	 * @param sequence is a job sequence with all jobs
-	 * @return a sequence of jobs with forced order until depth and after that the EDD logic
+	 * This method sets a node and calculates the node max lateness
+	 * @param job is the node
+	 * @param parentJob is the job in a higher hierarchy than the job
+	 * @param parentParentJob is the parent of the parent job (in a higher higher hierarchy)
+	 * @param sequence of all available jobs
+	 * @return the maximum lateness of the current node
 	 */
-	public int nodeLateness(Node node, Preemption[] sequence) {
+	public int calcNodeMaxLateness(Preemption job, Preemption parentJob, Preemption parentParentJob, Preemption[] sequence) {
 		
 		// declare EDD
 		Preemption[] EDDSequence = sequence;
@@ -151,28 +158,17 @@ public class BranchAndBound {
 		// declare max lateness
 		int maxLateness = 0;
 		
+		// set node
+		setNodes(job, parentJob, parentParentJob);
+		
 		// build sequence for calculation of maximum lateness of all jobs
-		Preemption[] currentSequence = getNodeJobs(node);
+		Preemption[] currentSequence = getNodeJobs(nodes[nodes.length - 1]);
 		
 		// calculate maxLateness
 		maxLateness = Schedule.maxLateness(EDDSequence, currentSequence, false);
 		
-		return maxLateness;
-	}
-	
-	/**
-	 * This method sets a node and calculates the node max lateness
-	 * @param job is the node
-	 * @param parentJob is the job in a higher hierarchy than the job
-	 * @param parentParentJob is the parent of the parent job (in a higher higher hierarchy)
-	 * @param sequence of all available jobs
-	 */
-	public int calcNodeMaxLateness(Preemption job, Preemption parentJob, Preemption parentParentJob, Preemption[] sequence) {
-		
-		// set node
-		setNodes(job, parentJob, parentParentJob);
 		// set maximum lateness in node
-		nodes[nodes.length - 1].setMaxLateness(nodeLateness(nodes[nodes.length - 1], sequence));
+		nodes[nodes.length - 1].setMaxLateness(maxLateness);
 		
 		return nodes[nodes.length - 1].getMaxLateness();
 	}
