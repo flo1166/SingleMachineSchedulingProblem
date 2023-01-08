@@ -152,6 +152,7 @@ public class Schedule extends BranchAndBound {
 	public static Preemption[] rootSolver(Preemption[] sequence, int currentPeriod) {
 		if (currentPeriod > 0) {
 			int j = 1;
+			sequence[j].preemption = true;
 			for (int i = 0; i < currentPeriod; i++) {
 				// if remaining p is exhausted, change job and set job end
 				if (sequence[j].remainingP == 0 && sequence[j].getJobEnd() == -1) {
