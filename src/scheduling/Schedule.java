@@ -51,7 +51,7 @@ public class Schedule extends BranchAndBound {
 		} 
 		
 		// if root true, then fill empty slots before the release of the first job with other jobs
-		if (root) {
+		if (root && currentPeriod != 0) {
 			EDDsequence = rootSolver(EDDsequence, currentPeriod);
 		}
 		
@@ -151,23 +151,23 @@ public class Schedule extends BranchAndBound {
 	 */
 	public static Preemption[] rootSolver(Preemption[] sequence, int currentPeriod) {
 		if (currentPeriod > 0) {
-			int j = 1;
-			sequence[j].preemption = true;
+			int j = 1; // start with second job (as first has a release date in the future)
+			sequence[j].preemption = true; // set true, because preemption is used when we fill the empty slots before the release date of the first job
 			for (int i = 0; i < currentPeriod; i++) {
 				// if remaining p is exhausted, change job and set job end
 				if (sequence[j].remainingP == 0 && sequence[j].getJobEnd() == -1) {
 					sequence[j].setJobEnd(i);
-					j += 1;
+					j += 1; // watch another job
 				}
 				// if job is released, adjust remaining p, otherwise change job and adjust current period
 				if (sequence[j].getR() <= currentPeriod) {
 					sequence[j].remainingP -= 1;
 				} else {
 					if (j == sequence.length - 1) {
-						j = 1;
+						j = 1; // restart with first job, when on end of sequence (if current period can't be filled)
 					} else {
-						j += 1;
-						i -= 1;
+						j += 1; // watch another job
+						i -= 1; // restart the current period and try to fit job in it
 					}
 				}
 			}
@@ -202,7 +202,7 @@ public class Schedule extends BranchAndBound {
 	/**
 	 * This sorts a sequence of jobs via selection sort.
 	 * @param sequence of jobs
-	 * @param ascending if true, then ascending otherwise decending
+	 * @param ascending if true, then ascending otherwise descending
 	 * @return a sorted EDD sequence
 	 */
 	public static Preemption[] selectionSortEDD(Preemption[] sequence, boolean ascending) {

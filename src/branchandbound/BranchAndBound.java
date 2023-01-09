@@ -147,9 +147,8 @@ public class BranchAndBound {
 	 * @param parentJob is the job in a higher hierarchy than the job
 	 * @param parentParentJob is the parent of the parent job (in a higher higher hierarchy)
 	 * @param sequence of all available jobs
-	 * @return the maximum lateness of the current node
 	 */
-	public int calcNodeMaxLateness(Preemption job, Preemption parentJob, Preemption parentParentJob, Preemption[] sequence) {
+	public void calcNodeMaxLateness(Preemption job, Preemption parentJob, Preemption parentParentJob, Preemption[] sequence) {
 		
 		// declare EDD
 		Preemption[] EDDSequence = sequence;
@@ -169,15 +168,14 @@ public class BranchAndBound {
 		
 		// set maximum lateness in node
 		nodes[nodes.length - 1].setMaxLateness(maxLateness);
-		
-		return nodes[nodes.length - 1].getMaxLateness();
 	}
 	
 	/**
 	 * This method compares the upper bound and establishes a new depth for the node with most potential
 	 * @param sequence of all jobs
+	 * @return true if it has preemption, otherwise false
 	 */
-	public void branching(Preemption[] sequence) {
+	public boolean branching(Preemption[] sequence) {
 		
 		int upperBound = depthLevel;
 		
@@ -190,17 +188,19 @@ public class BranchAndBound {
 		depthLevel += 1; // manipulation for one upper bound chosen
 		System.out.println("The upper bound is " + nodes[upperBound].getJob().getName() + " with max lateness: " + nodes[upperBound].getMaxLateness());
 		System.out.println();
-		buildDepth(sequence, nodes[upperBound]);
+		return buildDepth(sequence, nodes[upperBound]);
 	}
 	
 	/**
 	 * This method establishes another depth level into the branch and bound tree
 	 * @param sequence of all jobs
 	 * @param job that is set in the new node
+	 * @return true if preemption is used, false if not
 	 */
-	public void buildDepth(Preemption[] sequence, Node job) {
+	public boolean buildDepth(Preemption[] sequence, Node job) {
 		
 		Preemption[] usedSequence = getNodeJobs(job);
+		boolean preemption = false;
 			
 		for (int i = 0; i < sequence.length; i++) {
 			if (!Schedule.checkArrayElement(usedSequence, sequence[i])) {
@@ -208,8 +208,12 @@ public class BranchAndBound {
 				if (job.getJob() != null) {
 					depthLevel += 1;
 				}
+				if (preemption == false && sequence[i].preemption == true) {
+					preemption = true;
+				}
 			}
 		}
+		return preemption;
 	}
 	
 	/**
@@ -219,8 +223,17 @@ public class BranchAndBound {
 	 */
 	public boolean checkOptimalSolution(Preemption[] sequence) {
 		
+		// search where node with minimal maximum lateness is (in nodes)
+		int optimalIndex = 0;
+		for (int k = 0; k < sequence.length - 1; k++) {
+			if (nodes[nodes.length - k - 1].getMaxLateness() < nodes[sequence.length - optimalIndex - 1].getMaxLateness()) {
+				optimalIndex = k;
+			}
+		}
+		
+		// initialize variables
 		Node[] currentNodes = nodes;
-		Preemption[] usedSequence = getNodeJobs(nodes[nodes.length - 1]);
+		Preemption[] usedSequence = getNodeJobs(nodes[nodes.length - optimalIndex]);
 		Node optimalSequence = nodes[nodes.length - 1];
 		nodes = new Node[sequence.length];
 		

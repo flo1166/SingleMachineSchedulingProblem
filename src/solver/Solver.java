@@ -16,6 +16,8 @@ public class Solver {
 	 */
 	public static void main(String[] args) {
 		
+		boolean preemption = true;
+		
 		// the jobs with the initial data
 		Preemption[] jobs = new Preemption[4];
 		jobs[0] = new Preemption("A", 6, 0, 14);
@@ -31,7 +33,11 @@ public class Solver {
 		
 		// work further depths until end of tree
 		for (int i = 1; i < jobs.length; i++) {
-			schedule.branching(jobs);
+			preemption = schedule.branching(jobs);
+			// don't go deeper in the tree if schedule doesn't use preemption anymore
+			if (!preemption) {
+				i = jobs.length;
+			}
 		}
 		
 		// check optimal solution, otherwise start again
