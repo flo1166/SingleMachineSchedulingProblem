@@ -26,14 +26,14 @@ public class Solver {
 		jobs[3] = new Preemption("D", 5, 8, 13);
 		
 		// initiate a branch and bound tree structure
-		BranchAndBound schedule = new BranchAndBound();
+		BranchAndBound tree = new BranchAndBound();
 		
 		// initiate root problem and first depth
-		schedule.rootProblem(jobs);	
+		tree.rootProblem(jobs);	
 		
 		// work further depths until end of tree
 		for (int i = 1; i < jobs.length; i++) {
-			preemption = schedule.branching(jobs);
+			preemption = tree.branching(jobs);
 			// don't go deeper in the tree if schedule doesn't use preemption anymore
 			if (!preemption) {
 				i = jobs.length;
@@ -41,9 +41,9 @@ public class Solver {
 		}
 		
 		// check optimal solution, otherwise start again
-		while (schedule.checkOptimalSolution(jobs)) {
-			for (int i = 1; i < schedule.nodes.length - 1; i++) {
-				schedule.branching(jobs);
+		while (tree.checkOptimalSolution(jobs)) {
+			for (int i = 1; i < tree.nodes.length - 1; i++) {
+				tree.branching(jobs);
 			}
 		}
 	}
