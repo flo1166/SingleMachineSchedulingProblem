@@ -46,22 +46,19 @@ public class Schedule extends BranchAndBound {
 		
 		// initial variables
 		int currentPeriod = EDDsequence[0].getR();
+		
+		if (root) {
+			currentPeriod = 0;
+		}
+		
+		// if forced sequence, change current period and do jobWithoutPreemption
 		if (sequence != null) {
 			currentPeriod = sequence[0].getR();
-		} 
-		
-		// if root true, then fill empty slots before the release of the first job with other jobs
-		if (root && currentPeriod != 0) {
-			EDDsequence = rootSolver(EDDsequence, currentPeriod);
-		}
-		
-		// sequence of fixed jobs without preemption
-		if (sequence != null) {
 			currentPeriod = jobWithoutPreemption(sequence, currentPeriod);
-		}
-		
+		} 
+			
 		// EDDsequence of jobs with preemption
-		jobPreemption(EDDsequence, currentPeriod);
+		jobPreemption(EDDsequence, currentPeriod, root);
 	}
 	
 	/**
@@ -107,8 +104,8 @@ public class Schedule extends BranchAndBound {
 	 * @param sequence of jobs to be changed (not forced sequence)
 	 * @param currentPeriod of the calculation
 	 */
-	public static void jobPreemption(Preemption[] sequence, int currentPeriod) {
-		
+	public static void jobPreemption(Preemption[] sequence, int currentPeriod, boolean root) {
+			
 		for (int i = 0; i < sequence.length; i++) {
 			// go through periods until job is exhausted
 			while (sequence[i].remainingP != 0) {
@@ -141,40 +138,6 @@ public class Schedule extends BranchAndBound {
 		}
 	}
 
-	/**
-	 * This method solves a root problem in the branch and bound problem.
-	 * It is needed to fill the empty slots with jobs before the first problem 
-	 * has been released.
-	 * @param sequence with jobs
-	 * @param currentPeriod is the current period
-	 * @return sequence with changed jobs
-	 */
-	public static Preemption[] rootSolver(Preemption[] sequence, int currentPeriod) {
-		if (currentPeriod > 0) {
-			int j = 1; // start with second job (as first has a release date in the future)
-			sequence[j].preemption = true; // set true, because preemption is used when we fill the empty slots before the release date of the first job
-			for (int i = 0; i < currentPeriod; i++) {
-				// if remaining p is exhausted, change job and set job end
-				if (sequence[j].remainingP == 0 && sequence[j].getJobEnd() == -1) {
-					sequence[j].setJobEnd(i);
-					j += 1; // watch another job
-				}
-				// if job is released, adjust remaining p, otherwise change job and adjust current period
-				if (sequence[j].getR() <= currentPeriod) {
-					sequence[j].remainingP -= 1;
-				} else {
-					if (j == sequence.length - 1) {
-						j = 1; // restart with first job, when on end of sequence (if current period can't be filled)
-					} else {
-						j += 1; // watch another job
-						i -= 1; // restart the current period and try to fit job in it
-					}
-				}
-			}
-		}
-		return sequence;
-	}
-	
 	/**
 	 * This method calculates the maximum lateness of a given sequence of jobs
 	 * @param EDDsequence of all jobs sorted with EDD logic
