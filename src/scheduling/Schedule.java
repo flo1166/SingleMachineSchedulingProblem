@@ -123,7 +123,20 @@ public class Schedule extends BranchAndBound {
 					} else {
 						// if not on end of sequence swap jobs
 						if (sequence.length - 1 != i) {
-							sequence = swapJobs(sequence, sequence[i], sequence[i+1]);
+							// find next released job
+							int indexReleased = i;
+							for (int j = i; j < sequence.length; j++) {
+								if (sequence[j].getR() <= currentPeriod) {
+									indexReleased = j;
+									j = sequence.length;
+								}
+							}
+							// swap until job is at current i
+							if (indexReleased != i) {
+								for (int k = indexReleased; k == i + 1; k--) {
+									sequence = swapJobs(sequence, sequence[k-1], sequence[k]);
+								}
+							}
 							
 						// if on end no job is suitable, therefore count period +1
 						} else {
