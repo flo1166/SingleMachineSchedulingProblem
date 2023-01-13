@@ -37,19 +37,14 @@ public class Schedule extends BranchAndBound {
 	 * This method builds a schedule to get the job end to calculate the maximum lateness
 	 * @param EDDsequence of jobs sorted with EDD logic
 	 * @param sequence of jobs (until current node)
-	 * @param root if true then this is the root node (so released jobs can fill empty slots before the first job is released, otherwise start of schedule is release date of first job
 	 */
-	public static void buildSchedule(Preemption[] EDDsequence, Preemption[] sequence, boolean root) {
+	public static void buildSchedule(Preemption[] EDDsequence, Preemption[] sequence) {
 		
 		// reset jobs with new remaining p and empty job end
 		resetPJobs(EDDsequence);
 		
 		// initial variables
-		int currentPeriod = EDDsequence[0].getR();
-		
-		if (root) {
-			currentPeriod = 0;
-		}
+		int	currentPeriod = 0;
 		
 		// if forced sequence, change current period and do jobWithoutPreemption
 		if (sequence != null) {
@@ -58,7 +53,7 @@ public class Schedule extends BranchAndBound {
 		} 
 			
 		// EDDsequence of jobs with preemption
-		jobPreemption(EDDsequence, currentPeriod, root);
+		jobPreemption(EDDsequence, currentPeriod);
 	}
 	
 	/**
@@ -104,7 +99,7 @@ public class Schedule extends BranchAndBound {
 	 * @param sequence of jobs to be changed (not forced sequence)
 	 * @param currentPeriod of the calculation
 	 */
-	public static void jobPreemption(Preemption[] sequence, int currentPeriod, boolean root) {
+	public static void jobPreemption(Preemption[] sequence, int currentPeriod) {
 			
 		for (int i = 0; i < sequence.length; i++) {
 			// go through periods until job is exhausted
@@ -155,12 +150,11 @@ public class Schedule extends BranchAndBound {
 	 * This method calculates the maximum lateness of a given sequence of jobs
 	 * @param EDDsequence of all jobs sorted with EDD logic
 	 * @param sequence of jobs (until current node)
-	 * @param root true if it is a root problem, false if not
 	 * @return maximum lateness in a sequence of jobs
 	 */
-	public static int maxLateness(Preemption[] EDDsequence, Preemption[] sequence, boolean root) {
+	public static int maxLateness(Preemption[] EDDsequence, Preemption[] sequence) {
 		
-		buildSchedule(EDDsequence, sequence, root);		
+		buildSchedule(EDDsequence, sequence);		
 		int jobLateness = 0;
 		int maxLateness = 0;
 		
@@ -170,7 +164,7 @@ public class Schedule extends BranchAndBound {
 				maxLateness = jobLateness;
 			}
 		}
-		printSchedule(EDDsequence, sequence, root, maxLateness);
+		printSchedule(EDDsequence, sequence, maxLateness);
 
 		return maxLateness;
 	}
@@ -206,11 +200,10 @@ public class Schedule extends BranchAndBound {
 	 * This method prints a schedule (with job name and job end)
 	 * @param EDDsequence is the sorted sequence with EDD logic
 	 * @param sequence is the forced sequence
-	 * @param root true if it is a root problem, otherwise false
 	 * @param maxLateness is the max lateness of the current node schedule
 	 */
 	 
-	public static void printSchedule(Preemption[] EDDsequence, Preemption[] sequence, boolean root, int maxLateness) {
+	public static void printSchedule(Preemption[] EDDsequence, Preemption[] sequence, int maxLateness) {
 		
 		boolean preemption = false;
 		// if it isn't the root node

@@ -73,7 +73,7 @@ public class BranchAndBound {
 
 		// set node root problem ****
 		setNodes(null, null, null);
-		nodes[nodes.length - 1].setMaxLateness(Schedule.maxLateness(EDDSequence, null, true));
+		nodes[nodes.length - 1].setMaxLateness(Schedule.maxLateness(EDDSequence, null));
 		
 		// first depth
 		buildDepth(sequence, nodes[nodes.length - 1]);
@@ -164,7 +164,7 @@ public class BranchAndBound {
 		Preemption[] currentSequence = getNodeJobs(nodes[nodes.length - 1]);
 		
 		// calculate maxLateness
-		maxLateness = Schedule.maxLateness(EDDSequence, currentSequence, false);
+		maxLateness = Schedule.maxLateness(EDDSequence, currentSequence);
 		
 		// set maximum lateness in node
 		nodes[nodes.length - 1].setMaxLateness(maxLateness);
