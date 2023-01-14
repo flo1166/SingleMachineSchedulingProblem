@@ -129,7 +129,6 @@ public class Schedule extends BranchAndBound {
 					sequence = swapJobs(sequence, sequence[i], sequence[i+1]);	
 				} else {
 					currentPeriod += 1;				
-					
 				}
 			}
 		}
