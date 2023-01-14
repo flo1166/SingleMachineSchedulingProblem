@@ -104,43 +104,32 @@ public class Schedule extends BranchAndBound {
 		for (int i = 0; i < sequence.length; i++) {
 			// go through periods until job is exhausted
 			while (sequence[i].remainingP != 0) {
-				// if end of sequence or neighbor is not released
-				if (i == sequence.length - 1 || sequence[i+1].getR() != currentPeriod) {
-					// if sequence is released
-					if (sequence[i].getR() <= currentPeriod) {
-						sequence[i].remainingP -= 1;
-						currentPeriod += 1;
-						// set job end to current period (if dummy "-1" is set, otherwise job end is already set)
-						if (sequence[i].remainingP == 0 && sequence[i].getJobEnd() == -1) {
-							sequence[i].setJobEnd(currentPeriod);
-						}
-					// if sequence is not released
-					} else {
-						// if not on end of sequence swap jobs
-						if (sequence.length - 1 != i) {
-							// find next released job
-							int indexReleased = i;
-							for (int j = i; j < sequence.length; j++) {
-								if (sequence[j].getR() <= currentPeriod) {
-									indexReleased = j;
-									j = sequence.length;
-								}
-							}
-							// swap until job is at current i
-							if (indexReleased != i) {
-								for (int k = indexReleased; k == i + 1; k--) {
-									sequence = swapJobs(sequence, sequence[k-1], sequence[k]);
-								}
-							}
-							
-						// if on end no job is suitable, therefore count period +1
-						} else {
-							currentPeriod += 1;
-						}
+				// check if a new job is released
+				for (int k = i; k < sequence.length; k++) {					
+					if (sequence[k].getR() == currentPeriod) {
+						// check if first job in sequence is not released
+						if (sequence[i].getR() > currentPeriod){
+							sequence = swapJobs(sequence, sequence[i], sequence[k]);
+						// if first job in sequence is released and the due date of the job at k is lower than of the job in i, swap jobs
+						} else if (sequence[i].getR() <= currentPeriod && sequence[k].getD() < sequence[i].getD()) {
+							sequence = swapJobs(sequence, sequence[i], sequence[k]);							
+						} 						
 					}
-				// if not on the end of sequence and neighbor is released, swap jobs
+				}
+				// changes to the object if it is released
+				if (sequence[i].getR() <= currentPeriod) {
+					sequence[i].remainingP -= 1;
+					currentPeriod += 1;
+					// set job end to current period (if dummy "-1" is set, otherwise job end is already set)
+					if (sequence[i].remainingP == 0 && sequence[i].getJobEnd() == -1) {
+							sequence[i].setJobEnd(currentPeriod);
+					}
+					// otherwise swap job with neighbor
+				} else if (i != sequence.length - 1){
+					sequence = swapJobs(sequence, sequence[i], sequence[i+1]);	
 				} else {
-					sequence = swapJobs(sequence, sequence[i], sequence[i+1]);
+					currentPeriod += 1;				
+					
 				}
 			}
 		}
@@ -178,7 +167,6 @@ public class Schedule extends BranchAndBound {
 	public static Preemption[] selectionSortEDD(Preemption[] sequence, boolean ascending) {
 		
 		for (int i = 0; i < sequence.length; i++) {
-			
 			// find min / max
 			int minMax = i;
 			
